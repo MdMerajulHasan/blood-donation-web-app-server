@@ -41,7 +41,10 @@ async function run() {
     // all the api
     // api to store users data in usersCollection collection
     app.post("/users", async (req, res) => {
-      const result = await bloodDonationUsersCollection.insertOne(req.body);
+      const userData = req.body;
+      userData.role = "donor";
+      userData.status = "active";
+      const result = await bloodDonationUsersCollection.insertOne(userData);
       res.send(result);
     });
   } finally {
