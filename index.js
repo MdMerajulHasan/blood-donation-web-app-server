@@ -39,6 +39,25 @@ async function run() {
     const bloodDonationUsersCollection = db.collection("usersCollection");
 
     // all the api
+    app.get("/users", async (req, res) => {
+      const { bloodGroup, district, upazila } = req.query;
+      const query = {};
+      if (bloodGroup) {
+        query.bloodGroup = bloodGroup;
+      }
+      if (district) {
+        query.district = district;
+      }
+      if (upazila) {
+        query.upazila = upazila;
+      }
+
+      if (query) {
+        // query.role = "donor"
+        const result = await bloodDonationUsersCollection.find(query).toArray();
+        res.send(result);
+      }
+    });
     // api to store users data in usersCollection collection
     app.post("/users", async (req, res) => {
       const userData = req.body;
