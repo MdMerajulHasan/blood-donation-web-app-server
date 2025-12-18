@@ -39,7 +39,17 @@ async function run() {
     const bloodDonationUsersCollection = db.collection("usersCollection");
 
     // all the api
-    app.get("/users", async (req, res) => {
+
+    // api tpo get role
+    app.get("/role", async (req, res) => {
+      const email = req.query.email;
+      const query = { email };
+      console.log(req.headers.authorization);
+      const result = await bloodDonationUsersCollection.findOne(query);
+      res.send(result);
+    });
+    // api to get user data
+    app.get("/users-public", async (req, res) => {
       const { bloodGroup, district, upazila } = req.query;
       const query = {};
       if (bloodGroup) {
@@ -52,9 +62,14 @@ async function run() {
         query.upazila = upazila;
       }
 
+      const options = {_id:0, name: 1, email: 1 };
+
       if (query) {
         // query.role = "donor"
-        const result = await bloodDonationUsersCollection.find(query).toArray();
+        const result = await bloodDonationUsersCollection
+          .find(query)
+          .project(options)
+          .toArray();
         res.send(result);
       }
     });
