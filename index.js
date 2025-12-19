@@ -5,9 +5,34 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./red-help-blood-donation-firebase-admin-sdk.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
+
 // middlewares
 app.use(cors());
 app.use(express.json());
+
+verifyToken = async (req, res, next) => {
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = req.headers.authorization.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  try {
+    const userInfo = await admin.auth().verifyIdToken(token);
+    req.token_owner = userInfo.email;
+    next();
+  } catch {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+};
 
 const uri = process.env.Mongodb_URI;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -41,10 +66,12 @@ async function run() {
     // all the api
 
     // api tpo get role
-    app.get("/role", async (req, res) => {
+    app.get("/role", verifyToken, async (req, res) => {
       const email = req.query.email;
+      if (email !== req.token_owner) {
+        res.status(403).send({ message: "forbidden access" });
+      }
       const query = { email };
-      console.log(req.headers.authorization);
       const result = await bloodDonationUsersCollection.findOne(query);
       res.send(result);
     });
@@ -62,7 +89,7 @@ async function run() {
         query.upazila = upazila;
       }
 
-      const options = {_id:0, name: 1, email: 1 };
+      const options = { _id: 0, name: 1, email: 1 };
 
       if (query) {
         // query.role = "donor"
