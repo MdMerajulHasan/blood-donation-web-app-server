@@ -62,6 +62,10 @@ async function run() {
     const db = client.db("bloodDonation");
     // creating the data collection for the users data under the database "bloodDonation"
     const bloodDonationUsersCollection = db.collection("usersCollection");
+    // creating the data collection for all donation requests
+    const donationRequestsCollection = db.collection(
+      "donationRequestsCollection"
+    );
 
     // all the api
 
@@ -107,6 +111,17 @@ async function run() {
       userData.status = "active";
       const result = await bloodDonationUsersCollection.insertOne(userData);
       res.send(result);
+    });
+    // api to store data of donation requests
+    app.post("/create-donation-request", verifyToken, async (req, res) => {
+      const email = req.token_owner;
+      if (email === req.body.requesterEmail) {
+        req.body.donationStatus = "pending";
+        req.body.createdAt = new Date();
+        const newRequest = req.body;
+        const result = await donationRequestsCollection.insertOne(newRequest);
+        res.send(result);
+      }
     });
   } finally {
     // Ensures that the client will close when you finish/error
