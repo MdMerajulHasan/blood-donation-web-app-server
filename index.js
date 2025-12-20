@@ -69,11 +69,19 @@ async function run() {
 
     // all the api
 
-    // api to get own donation requests data
+    // api to get own recent 3 donation requests data
     app.get("/my-recent-requests", verifyToken, async (req, res) => {
       const email = req.token_owner;
       const query = { requesterEmail: email };
       const result = await donationRequestsCollection.find(query).sort({createdAt: -1}).limit(3).toArray();
+      res.send(result);
+    });
+
+    // api to get own all donation requests data
+    app.get("/my-donation-requests", verifyToken, async (req, res) => {
+      const email = req.token_owner;
+      const query = { requesterEmail: email };
+      const result = await donationRequestsCollection.find(query).sort({createdAt: -1}).toArray();
       res.send(result);
     });
 
