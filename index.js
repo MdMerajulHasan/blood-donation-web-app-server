@@ -69,6 +69,14 @@ async function run() {
 
     // all the api
 
+    // api to get own donation requests data
+    app.get("/my-recent-requests", verifyToken, async (req, res) => {
+      const email = req.token_owner;
+      const query = { requesterEmail: email };
+      const result = await donationRequestsCollection.find(query).sort({createdAt: -1}).limit(3).toArray();
+      res.send(result);
+    });
+
     // api tpo get role
     app.get("/role", verifyToken, async (req, res) => {
       const email = req.query.email;
