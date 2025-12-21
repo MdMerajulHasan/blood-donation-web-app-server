@@ -155,6 +155,18 @@ async function run() {
         res.send(result);
       }
     });
+    app.patch("/user", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const filter = { email };
+        const updatedDoc = { $set: req.body };
+        const result = await bloodDonationUsersCollection.updateOne(
+          filter,
+          updatedDoc
+        );
+        res.send(result);
+      }
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
