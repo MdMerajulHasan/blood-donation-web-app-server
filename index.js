@@ -127,6 +127,21 @@ async function run() {
         res.send(result);
       }
     });
+    app.get("/requests-public", async (req, res) => {
+      const options = {
+        recipientName: 1,
+        recipientDistrict: 1,
+        recipientUpazila: 1,
+        bloodGroup: 1,
+        donationDate: 1,
+        donationTime: 1,
+      };
+      const result = await donationRequestsCollection
+        .find({ donationStatus: "pending" })
+        .project(options)
+        .toArray();
+      res.send(result);
+    });
     // api to get users own data
     app.get("/user", verifyToken, async (req, res) => {
       const email = req.token_owner;
