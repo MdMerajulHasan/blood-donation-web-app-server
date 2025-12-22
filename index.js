@@ -247,6 +247,17 @@ async function run() {
         res.send(result);
       }
     });
+    // api to delete object
+    app.delete("/delete/:id", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const Id = req.params.id;
+        const id = new ObjectId(Id);
+        const query = { _id: id };
+        const result = await donationRequestsCollection.deleteOne(query);
+        res.send(result);
+      }
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
