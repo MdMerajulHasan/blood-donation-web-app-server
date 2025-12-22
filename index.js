@@ -71,11 +71,14 @@ async function run() {
 
     // api to get request details
     app.get("/request/:id/details", verifyToken, async (req, res) => {
-      const Id = req.params.id;
-      const id = new ObjectId(Id);
-      const query = { _id: id };
-      const result = await donationRequestsCollection.findOne(query);
-      res.send(result);
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const Id = req.params.id;
+        const id = new ObjectId(Id);
+        const query = { _id: id };
+        const result = await donationRequestsCollection.findOne(query);
+        res.send(result);
+      }
     });
 
     // api to get own recent 3 donation requests data
@@ -197,7 +200,22 @@ async function run() {
         return res.status(403).send({ message: "Forbidden Access" });
       }
     });
-    // api to update a donation request data
+    // api to update donation data from dashboard update page
+    app.patch("/update/:id/request-data", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const Id = req.params.id;
+        const id = new ObjectId(Id);
+        const filter = { _id: id };
+        const updatedDoc = { $set: req.body };
+        const result = await donationRequestsCollection.updateOne(
+          filter,
+          updatedDoc
+        );
+        res.send(result);
+      }
+    });
+    // api to update a donation request data when donor donate
     app.patch("/update/:id", verifyToken, async (req, res) => {
       if (req.body.donorEmail === req.token_owner) {
         const Id = req.params.id;
