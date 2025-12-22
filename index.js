@@ -114,6 +114,16 @@ async function run() {
       const result = await bloodDonationUsersCollection.findOne(query);
       res.send(result);
     });
+    // api to get user status
+    app.get("/user-status", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const query = { email };
+        const options = { _id: 0, status: 1 };
+        const result = await bloodDonationUsersCollection.findOne(query);
+        res.send(result.status);
+      }
+    });
     // api to get user data
     app.get("/users-public", async (req, res) => {
       const { bloodGroup, district, upazila } = req.query;
