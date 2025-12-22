@@ -180,6 +180,16 @@ async function run() {
         .toArray();
       res.send(result);
     });
+    // api to get requests number
+    app.get("/requests-number", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const query = {};
+        const result = await donationRequestsCollection.countDocuments(query);
+        res.send(result);
+      }
+      res.status(403).send({ message: "Forbidden Access!" });
+    });
     // api to get user number
     app.get("/users-number", verifyToken, async (req, res) => {
       const email = req.query.email;
