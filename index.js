@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 3000;
@@ -68,6 +68,15 @@ async function run() {
     );
 
     // all the api
+
+    // api to get request details
+    app.get("/request/:id/details", verifyToken, async (req, res) => {
+      const Id = req.params.id;
+      const id = new ObjectId(Id);
+      const query = { _id: id };
+      const result = await donationRequestsCollection.findOne(query);
+      res.send(result);
+    });
 
     // api to get own recent 3 donation requests data
     app.get("/my-recent-requests", verifyToken, async (req, res) => {
