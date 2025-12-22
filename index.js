@@ -22,7 +22,7 @@ admin.initializeApp({
 app.use(cors());
 app.use(express.json());
 
-verifyToken = async (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   if (!req.headers.authorization) {
     return res.status(401).send({ message: "unauthorized access" });
   }
@@ -71,6 +71,17 @@ async function run() {
     const donationRequestsCollection = db.collection(
       "donationRequestsCollection"
     );
+
+    // admin verification middleware
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.token_owner;
+      const query = { email };
+      const user = await bloodDonationUsersCollection.findOne(query);
+      if (!user || user.role !== "admin") {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      next();
+    };
 
     // all the api
 
@@ -168,6 +179,16 @@ async function run() {
         .project(options)
         .toArray();
       res.send(result);
+    });
+    // api to get user number
+    app.get("/users-number", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const query = { role: "donor" };
+        const result = await bloodDonationUsersCollection.countDocuments(query);
+        res.send(result);
+      }
+      res.status(403).send({ message: "Forbidden Access!" });
     });
     // api to get users own data
     app.get("/user", verifyToken, async (req, res) => {
