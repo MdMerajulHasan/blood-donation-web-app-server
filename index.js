@@ -179,6 +179,24 @@ async function run() {
         res.send(result);
       }
     });
+    // api to update inprogress to done or canceled status
+    app.patch("/update/:id/progress", verifyToken, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const Id = req.params.id;
+        const { status } = req.body;
+        const id = new ObjectId(Id);
+        const filter = { _id: id };
+        const updatedDoc = { $set: { donationStatus: status } };
+        const result = await donationRequestsCollection.updateOne(
+          filter,
+          updatedDoc
+        );
+        res.send(result);
+      } else {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+    });
     // api to update a donation request data
     app.patch("/update/:id", verifyToken, async (req, res) => {
       if (req.body.donorEmail === req.token_owner) {
