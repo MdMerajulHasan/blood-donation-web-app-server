@@ -95,17 +95,17 @@ async function run() {
         if (email === req.token_owner) {
           const query = {};
           const result = await donationRequestsCollection.find(query).toArray();
-          res.send(result);
+          return res.send(result);
         }
       }
     );
-    // api to get all users by the admin
+    // api to get all users without the super admin by admin only
     app.get("/all-users-data", verifyToken, verifyAdmin, async (req, res) => {
       const email = req.query.email;
       if (email === req.token_owner) {
         const query = { email: { $ne: "merajuljim1971@gmail.com" } };
         const result = await bloodDonationUsersCollection.find(query).toArray();
-        res.send(result);
+        return res.send(result);
       }
     });
 
@@ -117,7 +117,7 @@ async function run() {
         const id = new ObjectId(Id);
         const query = { _id: id };
         const result = await donationRequestsCollection.findOne(query);
-        res.send(result);
+        return res.send(result);
       }
     });
 
@@ -130,7 +130,7 @@ async function run() {
         .sort({ createdAt: -1 })
         .limit(3)
         .toArray();
-      res.send(result);
+      return res.send(result);
     });
 
     // api to get own all donation requests data
@@ -141,7 +141,7 @@ async function run() {
         .find(query)
         .sort({ createdAt: -1 })
         .toArray();
-      res.send(result);
+      return res.send(result);
     });
 
     // api tpo get role
@@ -152,7 +152,7 @@ async function run() {
       }
       const query = { email };
       const result = await bloodDonationUsersCollection.findOne(query);
-      res.send(result);
+      return res.send(result);
     });
     // api to get user status
     app.get("/user-status", verifyToken, async (req, res) => {
@@ -161,7 +161,7 @@ async function run() {
         const query = { email };
         const options = { _id: 0, status: 1 };
         const result = await bloodDonationUsersCollection.findOne(query);
-        res.send(result.status);
+        return res.send(result.status);
       }
     });
     // api to get user data
@@ -186,7 +186,7 @@ async function run() {
           .find(query)
           .project(options)
           .toArray();
-        res.send(result);
+        return res.send(result);
       }
     });
     app.get("/requests-public", async (req, res) => {
@@ -202,7 +202,7 @@ async function run() {
         .find({ donationStatus: "pending" })
         .project(options)
         .toArray();
-      res.send(result);
+      return res.send(result);
     });
     // api to get requests number
     app.get("/requests-number", verifyToken, async (req, res) => {
@@ -210,7 +210,7 @@ async function run() {
       if (email === req.token_owner) {
         const query = {};
         const result = await donationRequestsCollection.countDocuments(query);
-        res.send(result);
+        return res.send(result);
       }
       res.status(403).send({ message: "Forbidden Access!" });
     });
@@ -222,7 +222,7 @@ async function run() {
         const result = await bloodDonationUsersCollection.countDocuments(query);
         res.send(result);
       }
-      res.status(403).send({ message: "Forbidden Access!" });
+      return res.status(403).send({ message: "Forbidden Access!" });
     });
     // api to get users own data
     app.get("/user", verifyToken, async (req, res) => {
@@ -230,7 +230,7 @@ async function run() {
       if (email === req.query.email) {
         const query = { email };
         const result = await bloodDonationUsersCollection.findOne(query);
-        res.send(result);
+        return res.send(result);
       }
     });
     // api to store users data in usersCollection collection
@@ -239,7 +239,7 @@ async function run() {
       userData.role = "donor";
       userData.status = "active";
       const result = await bloodDonationUsersCollection.insertOne(userData);
-      res.send(result);
+      return res.send(result);
     });
     // api to store data of donation requests
     app.post("/create-donation-request", verifyToken, async (req, res) => {
@@ -249,7 +249,7 @@ async function run() {
         req.body.createdAt = new Date();
         const newRequest = req.body;
         const result = await donationRequestsCollection.insertOne(newRequest);
-        res.send(result);
+        return res.send(result);
       }
     });
     // api to update inprogress to done or canceled status
@@ -265,7 +265,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        res.send(result);
+        return res.send(result);
       } else {
         return res.status(403).send({ message: "Forbidden Access" });
       }
@@ -282,7 +282,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        res.send(result);
+        return res.send(result);
       }
     });
     // api to update a donation request data when donor donate
@@ -299,11 +299,31 @@ async function run() {
           query,
           updatedDoc
         );
-        res.send(result);
+        return res.send(result);
       } else {
-        res.status(403).send({ message: "Forbidden Access" });
+        return res.status(403).send({ message: "Forbidden Access" });
       }
     });
+    // api to manage user role by admin only
+    app.patch(
+      "/user/:email/update",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.query.email;
+        if (email === req.token_owner) {
+          const role = req.query.role;
+          const userEmail = req.params.email;
+          const filter = { email: userEmail };
+          const updatedDoc = { $set: { role } };
+          const result = await bloodDonationUsersCollection.updateOne(
+            filter,
+            updatedDoc
+          );
+          return res.send(result);
+        }
+      }
+    );
     // api to update user status by admin only
     app.patch("/user/:email", verifyToken, verifyAdmin, async (req, res) => {
       const email = req.query.email;
@@ -312,12 +332,11 @@ async function run() {
         const status = req.query.status;
         const filter = { email: userEmail };
         const updatedDoc = { $set: { status } };
-
         const result = await bloodDonationUsersCollection.updateOne(
           filter,
           updatedDoc
         );
-        res.send(result);
+        return res.send(result);
       }
     });
     // api to update user data
@@ -330,7 +349,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        res.send(result);
+        return res.send(result);
       }
     });
     // api to delete object
@@ -341,7 +360,7 @@ async function run() {
         const id = new ObjectId(Id);
         const query = { _id: id };
         const result = await donationRequestsCollection.deleteOne(query);
-        res.send(result);
+        return res.send(result);
       }
     });
   } finally {
