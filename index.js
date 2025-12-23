@@ -59,10 +59,10 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
     // create the database in mongodb
     const db = client.db("bloodDonation");
     // creating the data collection for the users data under the database "bloodDonation"
@@ -82,6 +82,16 @@ async function run() {
       }
       next();
     };
+    // volunteer verification middleware
+    const verifyVolunteer = async (req, res, next) => {
+      const email = req.token_owner;
+      const query = { email };
+      const user = await bloodDonationUsersCollection.findOne(query);
+      if (!user || (user.role !== "volunteer" && user.role !== "admin")) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      next();
+    };
 
     // all the api
 
@@ -89,13 +99,17 @@ async function run() {
     app.get(
       "/all-donation-requests",
       verifyToken,
-      verifyAdmin,
+      verifyVolunteer,
       async (req, res) => {
         const email = req.query.email;
         if (email === req.token_owner) {
           const query = {};
+          const status = req.query.status;
+          if (status) {
+            query.donationStatus = status;
+          }
           const result = await donationRequestsCollection.find(query).toArray();
-          return res.send(result);
+          res.send(result);
         }
       }
     );
@@ -104,8 +118,12 @@ async function run() {
       const email = req.query.email;
       if (email === req.token_owner) {
         const query = { email: { $ne: "merajuljim1971@gmail.com" } };
+        const status = req.query.status;
+        if (status) {
+          query.status = status;
+        }
         const result = await bloodDonationUsersCollection.find(query).toArray();
-        return res.send(result);
+        res.send(result);
       }
     });
 
@@ -117,7 +135,7 @@ async function run() {
         const id = new ObjectId(Id);
         const query = { _id: id };
         const result = await donationRequestsCollection.findOne(query);
-        return res.send(result);
+        res.send(result);
       }
     });
 
@@ -130,7 +148,7 @@ async function run() {
         .sort({ createdAt: -1 })
         .limit(3)
         .toArray();
-      return res.send(result);
+      res.send(result);
     });
 
     // api to get own all donation requests data
@@ -141,7 +159,7 @@ async function run() {
         .find(query)
         .sort({ createdAt: -1 })
         .toArray();
-      return res.send(result);
+      res.send(result);
     });
 
     // api tpo get role
@@ -152,7 +170,7 @@ async function run() {
       }
       const query = { email };
       const result = await bloodDonationUsersCollection.findOne(query);
-      return res.send(result);
+      res.send(result);
     });
     // api to get user status
     app.get("/user-status", verifyToken, async (req, res) => {
@@ -161,7 +179,7 @@ async function run() {
         const query = { email };
         const options = { _id: 0, status: 1 };
         const result = await bloodDonationUsersCollection.findOne(query);
-        return res.send(result.status);
+        res.send(result.status);
       }
     });
     // api to get user data
@@ -186,7 +204,7 @@ async function run() {
           .find(query)
           .project(options)
           .toArray();
-        return res.send(result);
+        res.send(result);
       }
     });
     app.get("/requests-public", async (req, res) => {
@@ -202,7 +220,7 @@ async function run() {
         .find({ donationStatus: "pending" })
         .project(options)
         .toArray();
-      return res.send(result);
+      res.send(result);
     });
     // api to get requests number
     app.get("/requests-number", verifyToken, async (req, res) => {
@@ -210,9 +228,9 @@ async function run() {
       if (email === req.token_owner) {
         const query = {};
         const result = await donationRequestsCollection.countDocuments(query);
-        return res.send(result);
+        res.send(result);
       }
-      res.status(403).send({ message: "Forbidden Access!" });
+     res.status(403).send({ message: "Forbidden Access!" });
     });
     // api to get user number
     app.get("/users-number", verifyToken, async (req, res) => {
@@ -222,7 +240,9 @@ async function run() {
         const result = await bloodDonationUsersCollection.countDocuments(query);
         res.send(result);
       }
-      return res.status(403).send({ message: "Forbidden Access!" });
+      if (email !== req.token_owner) {
+        res.status(403).send({ message: "Forbidden Access!" });
+      }
     });
     // api to get users own data
     app.get("/user", verifyToken, async (req, res) => {
@@ -230,7 +250,7 @@ async function run() {
       if (email === req.query.email) {
         const query = { email };
         const result = await bloodDonationUsersCollection.findOne(query);
-        return res.send(result);
+        res.send(result);
       }
     });
     // api to store users data in usersCollection collection
@@ -239,7 +259,7 @@ async function run() {
       userData.role = "donor";
       userData.status = "active";
       const result = await bloodDonationUsersCollection.insertOne(userData);
-      return res.send(result);
+      res.send(result);
     });
     // api to store data of donation requests
     app.post("/create-donation-request", verifyToken, async (req, res) => {
@@ -249,7 +269,7 @@ async function run() {
         req.body.createdAt = new Date();
         const newRequest = req.body;
         const result = await donationRequestsCollection.insertOne(newRequest);
-        return res.send(result);
+        res.send(result);
       }
     });
     // api to update inprogress to done or canceled status
@@ -265,7 +285,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        return res.send(result);
+        res.send(result);
       } else {
         return res.status(403).send({ message: "Forbidden Access" });
       }
@@ -282,7 +302,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        return res.send(result);
+        res.send(result);
       }
     });
     // api to update a donation request data when donor donate
@@ -299,7 +319,7 @@ async function run() {
           query,
           updatedDoc
         );
-        return res.send(result);
+        res.send(result);
       } else {
         return res.status(403).send({ message: "Forbidden Access" });
       }
@@ -336,7 +356,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        return res.send(result);
+        res.send(result);
       }
     });
     // api to update user data
@@ -349,7 +369,7 @@ async function run() {
           filter,
           updatedDoc
         );
-        return res.send(result);
+        res.send(result);
       }
     });
     // api to delete object
@@ -360,7 +380,7 @@ async function run() {
         const id = new ObjectId(Id);
         const query = { _id: id };
         const result = await donationRequestsCollection.deleteOne(query);
-        return res.send(result);
+        res.send(result);
       }
     });
   } finally {
