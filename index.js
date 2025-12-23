@@ -57,7 +57,7 @@ app.get("/", (req, res) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     // console.log(
@@ -153,13 +153,20 @@ async function run() {
 
     // api to get own all donation requests data
     app.get("/my-donation-requests", verifyToken, async (req, res) => {
-      const email = req.token_owner;
-      const query = { requesterEmail: email };
-      const result = await donationRequestsCollection
-        .find(query)
-        .sort({ createdAt: -1 })
-        .toArray();
-      res.send(result);
+      const email = req.query.email;
+
+      if (email === req.token_owner) {
+        const status = req.query.status;
+        const query = { requesterEmail: email };
+        if (status) {
+          query.donationStatus = status;
+        }
+        const result = await donationRequestsCollection
+          .find(query)
+          .sort({ createdAt: -1 })
+          .toArray();
+        res.send(result);
+      }
     });
 
     // api tpo get role
@@ -230,7 +237,7 @@ async function run() {
         const result = await donationRequestsCollection.countDocuments(query);
         res.send(result);
       }
-     res.status(403).send({ message: "Forbidden Access!" });
+      res.status(403).send({ message: "Forbidden Access!" });
     });
     // api to get user number
     app.get("/users-number", verifyToken, async (req, res) => {
