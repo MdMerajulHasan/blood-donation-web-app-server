@@ -84,6 +84,15 @@ async function run() {
     };
 
     // all the api
+    // api to get all users by the admin
+    app.get("/all-users-data", verifyToken, verifyAdmin, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const query = { email: { $ne: "merajuljim1971@gmail.com" } };
+        const result = await bloodDonationUsersCollection.find(query).toArray();
+        res.send(result);
+      }
+    });
 
     // api to get request details
     app.get("/request/:id/details", verifyToken, async (req, res) => {
