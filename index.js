@@ -304,6 +304,22 @@ async function run() {
         res.status(403).send({ message: "Forbidden Access" });
       }
     });
+    // api to update user status by admin only
+    app.patch("/user/:email", verifyToken, verifyAdmin, async (req, res) => {
+      const email = req.query.email;
+      if (email === req.token_owner) {
+        const userEmail = req.params.email;
+        const status = req.query.status;
+        const filter = { email: userEmail };
+        const updatedDoc = { $set: { status } };
+
+        const result = await bloodDonationUsersCollection.updateOne(
+          filter,
+          updatedDoc
+        );
+        res.send(result);
+      }
+    });
     // api to update user data
     app.patch("/user", verifyToken, async (req, res) => {
       const email = req.query.email;
