@@ -84,6 +84,21 @@ async function run() {
     };
 
     // all the api
+
+    // api to get all the requests admin
+    app.get(
+      "/all-donation-requests",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.query.email;
+        if (email === req.token_owner) {
+          const query = {};
+          const result = await donationRequestsCollection.find(query).toArray();
+          res.send(result);
+        }
+      }
+    );
     // api to get all users by the admin
     app.get("/all-users-data", verifyToken, verifyAdmin, async (req, res) => {
       const email = req.query.email;
