@@ -95,6 +95,24 @@ async function run() {
 
     // all the api
 
+    //public api to get total donor, total volunteer and total district number
+    app.get("/network-data", async (req, res) => {
+      const donorQuery = { role: "donor" };
+      const volunteerQuery = { role: "volunteer" };
+      const donorCount = await bloodDonationUsersCollection.countDocuments(
+        donorQuery
+      );
+      const districtCount = (
+        await bloodDonationUsersCollection
+          .aggregate([{ $group: { _id: "$district" } }, { $count: "total" }])
+          .toArray()
+      )[0].total;
+      const volunteerCount = await bloodDonationUsersCollection.countDocuments(
+        volunteerQuery
+      );
+      res.send({ donorCount, districtCount, volunteerCount });
+    });
+
     // api to get all the requests admin
     app.get(
       "/all-donation-requests",
